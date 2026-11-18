@@ -368,7 +368,15 @@ class CrowdSimVarNum(CrowdSim):
         Step the environment forward for one timestep
         Compute actions for all agents, detect collision, update environment and return (ob, reward, done, info)
         """
-        if self.robot.policy.name in ['ORCA', 'social_force']:
+        # 'ORCA'/'social_force' are this repo's own non-trainable baselines; the rest
+        # are the legacy value-network RL policies ported from
+        # ChanganVR/RelationalGraphLearning (crowd_nav/policy/legacy_rl/) plus their
+        # imitation-learning demonstrator ('ORCA' again, but legacy_orca's instance --
+        # Robot.act() tells the two apart by policy class, not name). None of these
+        # consume the dict action this repo's attention-network policies produce, so
+        # their action is recomputed here from the env's own human states instead.
+        if self.robot.policy.name in ['ORCA', 'social_force', 'CADRL', 'LSTM-RL', 'SARL', 'OM-SARL',
+                                      'ModelPredictiveRL']:
             # assemble observation for orca: px, py, vx, vy, r
             human_states = copy.deepcopy(self.last_human_states)
             # get orca action

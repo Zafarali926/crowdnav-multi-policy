@@ -3,13 +3,19 @@ import torch
 
 from crowd_sim.envs.utils.info import *
 
+# policies that compute their own action from the env's human states rather than
+# consuming this repo's attention-network observation/action interface: this repo's
+# own non-trainable baselines, plus the legacy value-network RL policies ported from
+# ChanganVR/RelationalGraphLearning (crowd_nav/policy/legacy_rl/)
+NON_NETWORK_POLICIES = ['orca', 'social_force', 'cadrl', 'lstm_rl', 'sarl', 'model_predictive_rl']
+
 
 def evaluate(actor_critic, eval_envs, num_processes, device, test_size, logging, config, args, visualize=False):
     """ function to run all testing episodes and log the testing metrics """
     # initializations
     eval_episode_rewards = []
 
-    if config.robot.policy not in ['orca', 'social_force']:
+    if config.robot.policy not in NON_NETWORK_POLICIES:
         eval_recurrent_hidden_states = {}
 
         node_num = 1
@@ -61,7 +67,7 @@ def evaluate(actor_critic, eval_envs, num_processes, device, test_size, logging,
 
         while not done:
             stepCounter = stepCounter + 1
-            if config.robot.policy not in ['orca', 'social_force']:
+            if config.robot.policy not in NON_NETWORK_POLICIES:
                 # run inference on the NN policy
                 with torch.no_grad():
                     _, action, _, eval_recurrent_hidden_states = actor_critic.act(

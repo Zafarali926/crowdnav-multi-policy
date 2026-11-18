@@ -163,3 +163,97 @@ class Config(object):
         raise ValueError("If using inferred prediction, you must wrap the envs!")
     if sim.predict_method != 'inferred' and env.use_wrapper:
         raise ValueError("If not using inferred prediction, you must NOT wrap the envs!")
+
+    # --- config needed by the legacy value-network RL policies ported from
+    # ChanganVR/RelationalGraphLearning (crowd_nav/policy/legacy_rl/): CADRL,
+    # LSTM-RL, SARL, RGL (model_predictive_rl). Field names/defaults follow that
+    # repo's crowd_nav/configs/icra_benchmark/config.py so the policies' own
+    # configure() methods need no changes. ---
+
+    # these policies read config.rl.gamma (RelationalGraphLearning's own name for
+    # this repo's reward.gamma)
+    rl = BaseConfig()
+    rl.gamma = reward.gamma
+
+    # occupancy map, shared by SARL/LSTM-RL(with_om)/CADRL(with_om)
+    om = BaseConfig()
+    om.cell_num = 4
+    om.cell_size = 1
+    om.om_channel_size = 3
+
+    # extra action-space fields these policies need beyond kinematics
+    action_space.speed_samples = 5
+    action_space.rotation_samples = 16
+    action_space.sampling = 'exponential'
+    action_space.query_env = False
+    action_space.rotation_constraint = np.pi / 3
+
+    cadrl = BaseConfig()
+    cadrl.mlp_dims = [150, 100, 100, 1]
+    cadrl.multiagent_training = False
+
+    lstm_rl = BaseConfig()
+    lstm_rl.global_state_dim = 50
+    lstm_rl.mlp1_dims = [150, 100, 100, 50]
+    lstm_rl.mlp2_dims = [150, 100, 100, 1]
+    lstm_rl.multiagent_training = True
+    lstm_rl.with_om = False
+    lstm_rl.with_interaction_module = True
+
+    sarl = BaseConfig()
+    sarl.mlp1_dims = [150, 100]
+    sarl.mlp2_dims = [100, 50]
+    sarl.attention_dims = [100, 100, 1]
+    sarl.mlp3_dims = [150, 100, 100, 1]
+    sarl.multiagent_training = True
+    sarl.with_om = True
+    sarl.with_global_state = True
+
+    # graph model used by RGL (model_predictive_rl)
+    gcn = BaseConfig()
+    gcn.multiagent_training = True
+    gcn.num_layer = 2
+    gcn.X_dim = 32
+    gcn.wr_dims = [64, gcn.X_dim]
+    gcn.wh_dims = [64, gcn.X_dim]
+    gcn.final_state_dim = gcn.X_dim
+    gcn.gcn2_w1_dim = gcn.X_dim
+    gcn.planning_dims = [150, 100, 100, 1]
+    gcn.similarity_function = 'embedded_gaussian'
+    gcn.layerwise_graph = False
+    gcn.skip_connection = True
+
+    model_predictive_rl = BaseConfig()
+    model_predictive_rl.linear_state_predictor = False
+    model_predictive_rl.planning_depth = 1
+    model_predictive_rl.planning_width = 1
+    model_predictive_rl.do_action_clip = False
+    model_predictive_rl.motion_predictor_dims = [64, 5]
+    model_predictive_rl.value_network_dims = [32, 100, 100, 1]
+    model_predictive_rl.share_graph_model = False
+
+    # imitation-learning warm start + RL training hyperparameters for the four
+    # legacy policies above, used only by train_legacy_rl.py -- train.py's PPO
+    # policies do not read this section
+    legacy_rl_training = BaseConfig()
+    legacy_rl_training.trainer_batch_size = 100
+    legacy_rl_training.trainer_optimizer = 'Adam'
+    legacy_rl_training.il_episodes = 2000
+    legacy_rl_training.il_policy = 'legacy_orca'
+    legacy_rl_training.il_epochs = 50
+    legacy_rl_training.il_learning_rate = 0.001
+    legacy_rl_training.safety_space = 0.15
+    legacy_rl_training.rl_learning_rate = 0.001
+    legacy_rl_training.train_batches = 100
+    legacy_rl_training.train_episodes = 10000
+    legacy_rl_training.sample_episodes = 1
+    legacy_rl_training.target_update_interval = 1000
+    legacy_rl_training.evaluation_interval = 1000
+    legacy_rl_training.capacity = 100000
+    legacy_rl_training.epsilon_start = 0.5
+    legacy_rl_training.epsilon_end = 0.1
+    legacy_rl_training.epsilon_decay = 4000
+    legacy_rl_training.checkpoint_interval = 1000
+    legacy_rl_training.freeze_state_predictor = False
+    legacy_rl_training.detach_state_predictor = False
+    legacy_rl_training.reduce_sp_update_frequency = False
