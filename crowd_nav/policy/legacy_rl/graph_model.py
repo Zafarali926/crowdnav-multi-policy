@@ -124,7 +124,12 @@ class RGL(nn.Module):
                 next_H = relu(torch.matmul(torch.matmul(normalized_A, H), self.Ws[i]))
 
             if self.skip_connection:
-                next_H += H
+                # was `next_H += H` upstream: an in-place add on next_H, which is the
+                # output of relu() just above and needed (unmodified) for that
+                # relu's own backward pass -- PyTorch's autograd version check
+                # rejects this (RuntimeError: modified by an inplace operation).
+                # Same result, no in-place mutation:
+                next_H = next_H + H
             H = next_H
 
         return next_H
